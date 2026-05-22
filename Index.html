@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUDOKU Pro - Cyber Mind Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Rajdhani for Cyberpunk/Synthwave Feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        cyber: ['Rajdhani', 'sans-serif'],
+                    },
+                    colors: {
+                        synth: {
+                            dark: '#0b091a',
+                            card: '#131129',
+                            pink: '#ff007f',
+                            violet: '#7928ca',
+                            cyan: '#00f0ff',
+                            yellow: '#ffee00'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-pink': '0 0 15px rgba(255, 0, 127, 0.4)',
+                        'neon-cyan': '0 0 15px rgba(0, 240, 255, 0.4)',
+                        'neon-violet': '0 0 20px rgba(121, 40, 202, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b091a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(121, 40, 202, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.15) 0px, transparent 50%),
+                linear-gradient(rgba(18, 16, 35, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 16, 35, 0.4) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        /* Ambient glow animation */
+        .glow-orb {
+            filter: blur(80px);
+            animation: floatGlow 12s ease-in-out infinite alternate;
+        }
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+            100% { transform: translate(30px, 50px) scale(1.2); opacity: 0.8; }
+        }
+
+        /* Shake animation for errors */
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* Custom scrollbar for stats */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(19, 17, 41, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7928ca;
+            border-radius: 999px;
+        }
+
+        /* Grid highlight transition */
+        .sudoku-cell {
+            transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative">
+
+    <!-- Decorative Glow Orbs -->
+    <div class="absolute top-10 left-10 w-72 h-72 rounded-full bg-pink-600/20 glow-orb pointer-events-none z-0"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-violet-600/20 glow-orb pointer-events-none z-0" style="animation-delay: -6s;"></div>
+
+    <!-- 1. PORTAL MASUK (LANDING PAGE) -->
+    <div id="auth-portal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#070512]/95 backdrop-blur-md transition-all duration-500">
+        <div class="w-full max-w-md bg-synth-card/90 border border-violet-500/30 p-8 rounded-3xl shadow-neon-violet relative overflow-hidden">
+            <!-- Synthwave Grid Accent -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-synth-pink via-synth-violet to-synth-cyan"></div>
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-600 text-white text-3xl shadow-neon-pink mb-4 animate-pulse">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h1 class="font-cyber text-4xl font-extrabold tracking-wider bg-gradient-to-r from-synth-pink via-purple-400 to-synth-cyan bg-clip-text text-transparent">
+                    SUDOKU PRO
+                </h1>
+                <p class="text-slate-400 text-sm mt-1 font-medium uppercase tracking-widest">Cyber Mind Training</p>
+            </div>
+
+            <!-- Lock Screen Info / Status -->
+            <div class="bg-violet-950/40 border border-violet-500/20 rounded-2xl p-4 mb-6 text-center text-xs text-violet-300">
+                <span class="font-bold text-synth-cyan"><i class="fa-solid fa-circle-info mr-1.5"></i> SISTEM TERKUNCI:</span> 
+                Gunakan Master Password <span class="bg-synth-pink/20 text-synth-pink px-2 py-0.5 rounded font-mono font-bold tracking-widest">CAPBRAIN</span> untuk membuka gerbang permainan.
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="handlePortalAccess(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Nama Agen / Pemain</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                            <i class="fa-solid fa-user-ninja"></i>
+                        </span>
+                        <input type="text" id="player-name" required placeholder="Masukkan Nama Anda" 
+                               class="w-full bg-[#0a0817] border border-violet-500/20 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-synth-pink focus:ring-1 focus:ring-synth-pink transition-all font-semibold">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Password Akses Master</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                            <i class="fa-solid fa-key"></i>
+                        </span>
+                        <input type="password" id="access-password" required placeholder="Masukkan Kode CAPBRAIN" 
+                               class="w-full bg-[#0a0817] border border-violet-500/20 rounded-2xl py-3 pl-10 pr-10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-synth-cyan focus:ring-1 focus:ring-synth-cyan transition-all font-mono tracking-widest">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
+                            <i id="eye-icon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-synth-pink to-synth-violet hover:from-pink-500 hover:to-violet-500 text-white font-cyber text-lg font-bold py-3.5 px-6 rounded-2xl shadow-neon-pink transition duration-300 transform active:scale-95 flex items-center justify-center space-x-2">
+                    <span>AKSES GAME</span>
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                </button>
+            </form>
+
+            <div class="text-center mt-6 text-[11px] text-slate-500">
+                SUDOKU Pro &copy; 2026. All Minds Secured.
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. GAME AREA DASHBOARD -->
+    <header class="w-full max-w-5xl mx-auto px-4 pt-6 pb-2 z-10 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-violet-500/15">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-synth-pink to-synth-violet text-white flex items-center justify-center shadow-neon-pink">
+                <i class="fa-solid fa-brain text-xl"></i>
+            </div>
+            <div>
+                <h2 class="font-cyber text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-synth-cyan">SUDOKU PRO</h2>
+                <div class="flex items-center text-xs text-slate-400 gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span>Pemain: <strong id="header-user-name" class="text-synth-cyan">--</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls/Stats on Header -->
+        <div class="flex items-center space-x-3">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-synth-card hover:bg-violet-950/50 border border-violet-500/20 text-slate-400 hover:text-white transition flex items-center justify-center">
+                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            </button>
+            <!-- Stats Button -->
+            <button onclick="openStatsModal()" class="w-10 h-10 rounded-xl bg-synth-card hover:bg-violet-950/50 border border-violet-500/20 text-slate-400 hover:text-white transition flex items-center justify-center">
+                <i class="fa-solid fa-chart-simple"></i>
+            </button>
+            <!-- Logout Button -->
+            <button onclick="handleLogout()" class="px-4 h-10 rounded-xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/30 text-red-400 hover:text-red-300 font-cyber font-bold tracking-wider text-xs transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-power-off"></i>
+                <span class="hidden sm:inline">KUNCI</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl mx-auto px-4 py-4 z-10 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <!-- LEFT: Game Dashboard Board (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col items-center">
+            
+            <!-- Top Bar: Level & Timer -->
+            <div class="w-full max-w-[460px] flex justify-between items-center mb-3 px-1 text-sm font-semibold">
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400 text-xs">DIFFICULTY:</span>
+                    <button onclick="openDifficultyModal()" class="px-3 py-1 rounded-full bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 text-synth-cyan text-xs font-bold uppercase tracking-widest flex items-center space-x-1 transition">
+                        <span id="display-difficulty">SEDA NG</span>
+                        <i class="fa-solid fa-caret-down text-[10px]"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-1.5 font-mono text-slate-200 bg-synth-card/80 border border-violet-500/20 px-3 py-1 rounded-xl shadow-inner">
+                        <i class="fa-regular fa-clock text-synth-pink animate-pulse"></i>
+                        <span id="display-timer">00:00</span>
+                    </div>
+                    <!-- Pause/Play Button -->
+                    <button id="btn-pause" onclick="togglePauseGame()" class="w-8 h-8 rounded-lg bg-synth-card hover:bg-violet-950/50 border border-violet-500/20 text-slate-300 transition flex items-center justify-center">
+                        <i id="pause-icon" class="fa-solid fa-pause"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUDOKU BOARD CONTAINER -->
+            <div class="relative w-full max-w-[460px] aspect-square bg-[#0c0a1f] border-2 border-violet-600 rounded-2xl overflow-hidden shadow-neon-violet p-1" id="board-container">
+                <!-- GRID 9x9 -->
+                <div id="sudoku-grid" class="w-full h-full grid grid-cols-9 grid-rows-9 gap-[1px] bg-violet-950/50">
+                    <!-- Dynamic Grid Generating via JS -->
+                </div>
+
+                <!-- PAUSE OVERLAY -->
+                <div id="pause-overlay" class="absolute inset-0 bg-[#070512]/95 backdrop-blur-md z-20 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-all duration-300">
+                    <div class="w-16 h-16 rounded-full bg-synth-cyan/10 border border-synth-cyan flex items-center justify-center text-synth-cyan text-2xl shadow-neon-cyan mb-4">
+                        <i class="fa-solid fa-pause"></i>
+                    </div>
+                    <h3 class="font-cyber text-2xl font-black tracking-wider text-white">GAME PAUSED</h3>
+                    <p class="text-slate-400 text-xs mt-1 mb-6">Waktu dihentikan sementara</p>
+                    <button onclick="togglePauseGame()" class="px-6 py-2.5 bg-gradient-to-r from-synth-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-cyber font-bold tracking-wider rounded-xl shadow-neon-cyan transition duration-300 transform active:scale-95">
+                        RESUME GAME
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: Side Panel Controls (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col justify-center w-full max-w-[460px] mx-auto lg:max-w-none">
+            <!-- Mistakes Counter / Lives & Notes Display -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-synth-card border border-violet-500/15 p-3 rounded-2xl flex items-center space-x-3 shadow-inner">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+                        <i class="fa-solid fa-heart-crack"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">KESALAHAN</div>
+                        <div class="text-sm font-extrabold font-mono text-slate-200" id="mistakes-counter">0 / 3</div>
+                    </div>
+                </div>
+                
+                <div class="bg-synth-card border border-violet-500/15 p-3 rounded-2xl flex items-center space-x-3 shadow-inner">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">SISA PETUNJUK</div>
+                        <div class="text-sm font-extrabold font-mono text-slate-200" id="hints-counter">3 / 3</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION CONTROLS (Undo, Erase, Pencil, Hint) -->
+            <div class="grid grid-cols-4 gap-2 mb-4 text-center">
+                <!-- Undo -->
+                <button onclick="undoMove()" class="bg-synth-card hover:bg-violet-950/30 border border-violet-500/15 hover:border-violet-500/30 p-3 rounded-2xl flex flex-col items-center justify-center gap-1 group transition">
+                    <div class="w-8 h-8 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 text-violet-400 flex items-center justify-center transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Batal</span>
+                </button>
+
+                <!-- Erase -->
+                <button onclick="eraseCell()" class="bg-synth-card hover:bg-violet-950/30 border border-violet-500/15 hover:border-violet-500/30 p-3 rounded-2xl flex flex-col items-center justify-center gap-1 group transition">
+                    <div class="w-8 h-8 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 text-violet-400 flex items-center justify-center transition">
+                        <i class="fa-solid fa-eraser"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hapus</span>
+                </button>
+
+                <!-- Pencil Notes Toggle -->
+                <button id="btn-pencil" onclick="togglePencilMode()" class="bg-synth-card hover:bg-violet-950/30 border border-violet-500/15 hover:border-violet-500/30 p-3 rounded-2xl flex flex-col items-center justify-center gap-1 group transition relative">
+                    <div class="w-8 h-8 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 text-violet-400 flex items-center justify-center transition">
+                        <i class="fa-solid fa-pencil"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Catatan</span>
+                    <span id="pencil-badge" class="absolute top-1.5 right-1.5 text-[8px] bg-slate-700 text-white px-1.5 py-0.5 rounded-full font-bold">OFF</span>
+                </button>
+
+                <!-- Hint -->
+                <button onclick="getHint()" class="bg-synth-card hover:bg-violet-950/30 border border-violet-500/15 hover:border-violet-500/30 p-3 rounded-2xl flex flex-col items-center justify-center gap-1 group transition">
+                    <div class="w-8 h-8 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 text-violet-400 flex items-center justify-center transition">
+                        <i class="fa-regular fa-lightbulb text-amber-400"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hint</span>
+                </button>
+            </div>
+
+            <!-- TOUCH NUMERIC KEYPAD -->
+            <div class="bg-synth-card/50 border border-violet-500/10 p-4 rounded-3xl mb-4 shadow-xl">
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Papan Angka Input</div>
+                <div class="grid grid-cols-3 gap-2.5">
+                    <!-- Keypads 1 to 9 -->
+                    <button onclick="inputNumber(1)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">1</button>
+                    <button onclick="inputNumber(2)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">2</button>
+                    <button onclick="inputNumber(3)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">3</button>
+                    <button onclick="inputNumber(4)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">4</button>
+                    <button onclick="inputNumber(5)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">5</button>
+                    <button onclick="inputNumber(6)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">6</button>
+                    <button onclick="inputNumber(7)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">7</button>
+                    <button onclick="inputNumber(8)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">8</button>
+                    <button onclick="inputNumber(9)" class="btn-num bg-synth-card hover:bg-violet-950/50 text-xl font-bold py-3 border border-violet-500/20 rounded-2xl text-slate-100 hover:text-white transition duration-150 transform active:scale-95">9</button>
+                </div>
+            </div>
+
+            <!-- RESTART & REGEN GAME BUTTONS -->
+            <button onclick="openDifficultyModal()" class="w-full bg-gradient-to-r from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-600 py-3.5 rounded-2xl font-cyber text-sm font-bold tracking-wider text-white shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2">
+                <i class="fa-solid fa-gamepad"></i>
+                <span>GAME BARU</span>
+            </button>
+        </div>
+    </main>
+
+    <footer class="w-full text-center py-4 text-xs text-slate-600 border-t border-violet-500/5 mt-6 z-10">
+        Sudoku Pro &copy; 2026. Dikembangkan dengan Cinta & Logika.
+    </footer>
+
+    <!-- MODALS SECTION -->
+    
+    <!-- A. MODAL PILIHAN LEVEL (DIFFICULTY) -->
+    <div id="modal-difficulty" class="fixed inset-0 bg-[#070512]/90 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-synth-card border border-violet-500/30 rounded-3xl w-full max-w-sm p-6 shadow-neon-violet transform translate-y-4 transition-all duration-300">
+            <h3 class="text-xl font-cyber font-black tracking-wider text-white mb-1 flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-synth-pink"></i>
+                <span>Mulai Game Baru</span>
+            </h3>
+            <p class="text-slate-400 text-xs mb-5">Pilih tingkat kesulitan yang sesuai dengan keahlian berpikir logis Anda.</p>
+            
+            <div class="space-y-2.5">
+                <button onclick="selectDifficulty('easy')" class="w-full flex justify-between items-center px-4 py-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-leaf mr-2.5 text-green-500"></i> Mudah</span>
+                    <span class="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold">PEMULA</span>
+                </button>
+                <button onclick="selectDifficulty('medium')" class="w-full flex justify-between items-center px-4 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-graduation-cap mr-2.5 text-blue-500"></i> Sedang</span>
+                    <span class="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold">MENENGAH</span>
+                </button>
+                <button onclick="selectDifficulty('hard')" class="w-full flex justify-between items-center px-4 py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-fire mr-2.5 text-amber-500"></i> Sulit</span>
+                    <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">MAHIR</span>
+                </button>
+                <button onclick="selectDifficulty('expert')" class="w-full flex justify-between items-center px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-crown mr-2.5 text-red-500"></i> Pakar</span>
+                    <span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">EPIC</span>
+                </button>
+                <button onclick="selectDifficulty('master')" class="w-full flex justify-between items-center px-4 py-3 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/20 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-brain mr-2.5 text-fuchsia-500"></i> Master</span>
+                    <span class="text-[10px] bg-fuchsia-500 text-white px-2 py-0.5 rounded-full font-bold">LEGENDA</span>
+                </button>
+                <button onclick="selectDifficulty('extreme')" class="w-full flex justify-between items-center px-4 py-3 bg-violet-600/15 hover:bg-violet-600/30 text-violet-400 border border-violet-500/30 font-bold rounded-2xl text-left transition">
+                    <span class="flex items-center"><i class="fa-solid fa-bolt mr-2.5 text-violet-500"></i> Extreme</span>
+                    <span class="text-[10px] bg-violet-500 text-white px-2 py-0.5 rounded-full font-bold">MUSTAHIL</span>
+                </button>
+            </div>
+            
+            <button onclick="closeDifficultyModal()" class="mt-4 w-full bg-[#181530] hover:bg-violet-950/40 text-slate-300 font-bold py-2.5 px-4 rounded-xl transition text-center text-sm border border-violet-500/10">
+                Batal
+            </button>
+        </div>
+    </div>
+
+    <!-- B. MODAL CUSTOM CONFIRM & ALERT -->
+    <div id="modal-alert" class="fixed inset-0 bg-[#070512]/90 backdrop-blur-md z-[60] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-synth-card border border-violet-500/30 rounded-3xl w-full max-w-sm p-6 shadow-neon-pink transform translate-y-4 transition-all duration-300 text-center">
+            <div id="alert-icon-container" class="w-14 h-14 rounded-full bg-pink-500/10 text-synth-pink flex items-center justify-center text-2xl mx-auto mb-4 border border-synth-pink/20">
+                <i id="alert-icon" class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <h3 id="alert-title" class="text-xl font-cyber font-bold tracking-wide text-white mb-2">Pemberitahuan</h3>
+            <p id="alert-message" class="text-slate-400 text-sm mb-6 px-2">Pesan peringatan Anda.</p>
+            
+            <div id="alert-buttons-container" class="flex space-x-3">
+                <button id="alert-btn-cancel" class="flex-1 bg-slate-900 border border-violet-500/15 hover:bg-slate-800 text-slate-300 py-2.5 px-4 rounded-xl transition font-semibold text-sm">
+                    Batal
+                </button>
+                <button id="alert-btn-confirm" class="flex-1 bg-gradient-to-r from-synth-pink to-synth-violet hover:from-pink-500 hover:to-violet-500 text-white py-2.5 px-4 rounded-xl shadow-neon-pink transition font-semibold text-sm">
+                    Ya, Lanjut
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- C. MODAL STATISTIK & REKOR -->
+    <div id="modal-stats" class="fixed inset-0 bg-[#070512]/90 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-synth-card border border-violet-500/30 rounded-3xl w-full max-w-md p-6 shadow-neon-cyan transform translate-y-4 transition-all duration-300">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-cyber font-black tracking-wider text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line text-synth-cyan"></i>
+                    <span>Analisis Statistik</span>
+                </h3>
+                <button onclick="closeStatsModal()" class="text-slate-400 hover:text-white transition text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="bg-[#0b091a] border border-violet-500/10 p-3 rounded-2xl text-center">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Game Dimainkan</div>
+                    <div id="stat-total-played" class="text-2xl font-black font-cyber text-synth-cyan">0</div>
+                </div>
+                <div class="bg-[#0b091a] border border-violet-500/10 p-3 rounded-2xl text-center">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Game Dimenangkan</div>
+                    <div id="stat-total-won" class="text-2xl font-black font-cyber text-synth-pink">0</div>
+                </div>
+            </div>
+
+            <!-- Rekor Waktu Terbaik -->
+            <div class="bg-[#0b091a] border border-violet-500/10 p-4 rounded-2xl mb-5">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 text-center border-b border-violet-500/10 pb-2">REKOR WAKTU TERCEPAT</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-leaf text-green-500 mr-1.5"></i> Mudah:</span> 
+                        <span id="stat-best-easy" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-graduation-cap text-blue-500 mr-1.5"></i> Sedang:</span> 
+                        <span id="stat-best-medium" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-fire text-amber-500 mr-1.5"></i> Sulit:</span> 
+                        <span id="stat-best-hard" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-crown text-red-500 mr-1.5"></i> Pakar:</span> 
+                        <span id="stat-best-expert" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-brain text-fuchsia-500 mr-1.5"></i> Master:</span> 
+                        <span id="stat-best-master" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-violet-950/20 p-2 rounded-lg">
+                        <span class="text-slate-400 text-xs font-bold"><i class="fa-solid fa-bolt text-violet-500 mr-1.5"></i> Extreme:</span> 
+                        <span id="stat-best-extreme" class="font-mono font-bold text-slate-200">--:--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="resetStatsData()" class="flex-1 bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/30 py-2.5 rounded-xl text-xs font-bold transition">
+                    <i class="fa-regular fa-trash-can mr-1.5"></i> RESET DATA
+                </button>
+                <button onclick="closeStatsModal()" class="flex-1 bg-gradient-to-r from-synth-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white py-2.5 rounded-xl text-xs font-bold tracking-wider shadow-neon-cyan transition text-center">
+                    TUTUP
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selebrasi Confetti Canvas -->
+    <canvas id="confetti-canvas" class="fixed inset-0 z-40 pointer-events-none w-full h-full"></canvas>
+
+    <!-- JS LOGIC AND GAME ENGINE -->
+    <script>
+        
+        // -------------------------
+        // GAME STATE DATA
+        // -------------------------
+        let userLoggedIn = false;
+        let activePlayer = "";
+        
+        let gridSolution = [];
+        let gridInitial = [];
+        let gridCurrent = [];
+        let cellNotes = Array(81).fill(null).map(() => Array(10).fill(false)); // Stores notes for each cell (1-9)
+        
+        let selectedCellIndex = -1; // -1 means none
+        let activeDifficulty = 'medium';
+        let isPencilMode = false;
+        let maxMistakes = 3;
+        let mistakesCount = 0;
+        let remainingHints = 3;
+        
+        // Timer
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let isGamePaused = false;
+        
+        // History for Undo/Redo stack
+        let historyStack = [];
+
+        // Sound synthesizer via Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'victory') {
+                    // Quick futuristic neon chime
+                    const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.12, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+                        
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.35);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio Error:", e);
+            }
+        }
+
+        
+        // -------------------------
+        // ENGINE SUDOKU GENERATOR & SOLVER
+        // -------------------------
+        
+        // Backtracking implementation to check safety
+        function isSafeToPlace(grid, row, col, num) {
+            for (let x = 0; x < 9; x++) {
+                if (grid[row * 9 + x] === num || grid[x * 9 + col] === num) {
+                    return false;
+                }
+            }
+            let startRow = row - row % 3;
+            let startCol = col - col % 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (grid[(i + startRow) * 9 + (j + startCol)] === num) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Fills the board completely with a random valid solution
+        function solveSudokuEngine(grid) {
+            for (let cell = 0; cell < 81; cell++) {
+                let row = Math.floor(cell / 9);
+                let col = cell % 9;
+                
+                if (grid[cell] === 0) {
+                    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+                    for (let num of numbers) {
+                        if (isSafeToPlace(grid, row, col, num)) {
+                            grid[cell] = num;
+                            if (solveSudokuEngine(grid)) {
+                                return true;
+                            }
+                            grid[cell] = 0;
+                        }
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Generates the Sudoku Puzzle
+        function generateSudoku(difficulty) {
+            let solverGrid = Array(81).fill(0);
+            
+            // Randomly fill diagonal 3x3 matrices to speed up randomization
+            for (let i = 0; i < 9; i += 3) {
+                let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+                let idx = 0;
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 3; col++) {
+                        solverGrid[(i + row) * 9 + (i + col)] = nums[idx++];
+                    }
+                }
+            }
+
+            solveSudokuEngine(solverGrid);
+            
+            // Keep clone of filled grid as solution
+            gridSolution = [...solverGrid];
+
+            // Determine empty holes depending on difficulty selection
+            let holes = 35;
+            if (difficulty === 'easy') holes = 30;
+            else if (difficulty === 'medium') holes = 42;
+            else if (difficulty === 'hard') holes = 50;
+            else if (difficulty === 'expert') holes = 58;
+            else if (difficulty === 'master') holes = 63;
+            else if (difficulty === 'extreme') holes = 64; // Max logical empty slots
+
+            gridInitial = [...gridSolution];
+            
+            // Carve out holes in the board
+            let listIndices = Array.from({length: 81}, (_, i) => i).sort(() => Math.random() - 0.5);
+            for (let i = 0; i < holes; i++) {
+                gridInitial[listIndices[i]] = 0;
+            }
+
+            gridCurrent = [...gridInitial];
+            cellNotes = Array(81).fill(null).map(() => Array(10).fill(false));
+            selectedCellIndex = -1;
+            mistakesCount = 0;
+            remainingHints = 3;
+            historyStack = [];
+            
+            updateDashboardDisplay();
+            renderBoardGrid();
+        }
+
+
+        // -------------------------
+        // UI & GAME NAVIGATION HANDLERS
+        // -------------------------
+
+        // Controls theme toggle (light vs. dark theme)
+        function toggleTheme() {
+            playSound('click');
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-sun";
+                // Light mode backgrounds adjust beautifully
+                document.body.style.backgroundColor = "#f8fafc";
+            } else {
+                html.classList.add('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-moon";
+                document.body.style.backgroundColor = "#0b091a";
+            }
+        }
+
+        // Toggles Master Password input field visibility
+        function togglePasswordVisibility() {
+            playSound('click');
+            const passInput = document.getElementById('access-password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passInput.type === "password") {
+                passInput.type = "text";
+                eyeIcon.className = "fa-solid fa-eye-slash";
+            } else {
+                passInput.type = "password";
+                eyeIcon.className = "fa-solid fa-eye";
+            }
+        }
+
+        // Validates credentials and logins
+        async function handlePortalAccess(e) {
+            e.preventDefault();
+            const inputName = document.getElementById('player-name').value.trim();
+            const inputPass = document.getElementById('access-password').value;
+            const portalCard = document.querySelector('#auth-portal > div');
+
+            if (inputPass !== "CAPBRAIN") {
+                playSound('error');
+                portalCard.classList.add('shake');
+                setTimeout(() => portalCard.classList.remove('shake'), 500);
+                
+                await showCustomAlert("Akses Ditolak", "Password Master salah! Masukkan password 'CAPBRAIN' untuk meloloskan enkripsi keamanan.", "error");
+                return;
+            }
+
+            playSound('success');
+            activePlayer = inputName;
+            userLoggedIn = true;
+            
+            // Save state
+            localStorage.setItem('sudoku_logged_in', 'true');
+            localStorage.setItem('sudoku_player_name', activePlayer);
+
+            document.getElementById('header-user-name').textContent = activePlayer;
+            
+            // Animate exit portal
+            const portal = document.getElementById('auth-portal');
+            portal.classList.add('opacity-0', 'pointer-events-none');
+            
+            initNewGame(activeDifficulty);
+        }
+
+        // Logouts from player portal
+        function handleLogout() {
+            showCustomConfirm(
+                "Kunci Portal?", 
+                "Apakah Anda yakin ingin mengunci portal game dan keluar ke halaman otentikasi?",
+                async (confirmed) => {
+                    if (confirmed) {
+                        playSound('error');
+                        userLoggedIn = false;
+                        localStorage.removeItem('sudoku_logged_in');
+                        
+                        const portal = document.getElementById('auth-portal');
+                        portal.classList.remove('opacity-0', 'pointer-events-none');
+                        
+                        // Clear inputs
+                        document.getElementById('access-password').value = "";
+                        clearInterval(timerInterval);
+                    }
+                }
+            );
+        }
+
+        // Show custom interactive notification alert
+        function showCustomAlert(title, msg, type = 'info') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('modal-alert');
+                const titleEl = document.getElementById('alert-title');
+                const msgEl = document.getElementById('alert-message');
+                const iconContainer = document.getElementById('alert-icon-container');
+                const icon = document.getElementById('alert-icon');
+                const btnCancel = document.getElementById('alert-btn-cancel');
+                const btnConfirm = document.getElementById('alert-btn-confirm');
+
+                titleEl.textContent = title;
+                msgEl.textContent = msg;
+
+                if (type === 'error') {
+                    iconContainer.className = "w-14 h-14 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-red-500/20";
+                    icon.className = "fa-solid fa-circle-xmark";
+                } else if (type === 'success') {
+                    iconContainer.className = "w-14 h-14 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-green-500/20";
+                    icon.className = "fa-solid fa-circle-check";
+                } else {
+                    iconContainer.className = "w-14 h-14 rounded-full bg-cyan-500/10 text-synth-cyan flex items-center justify-center text-2xl mx-auto mb-4 border border-cyan-500/20";
+                    icon.className = "fa-solid fa-circle-info";
+                }
+
+                btnCancel.classList.add('hidden');
+                btnConfirm.textContent = "OK";
+                btnConfirm.className = "flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white py-2.5 px-4 rounded-xl shadow-lg transition font-semibold text-sm";
+
+                btnConfirm.onclick = () => {
+                    modal.classList.add('opacity-0', 'pointer-events-none');
+                    resolve();
+                };
+
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            });
+        }
+
+        // Show custom interactive confirm alert
+        function showCustomConfirm(title, msg, callback) {
+            const modal = document.getElementById('modal-alert');
+            const titleEl = document.getElementById('alert-title');
+            const msgEl = document.getElementById('alert-message');
+            const iconContainer = document.getElementById('alert-icon-container');
+            const icon = document.getElementById('alert-icon');
+            const btnCancel = document.getElementById('alert-btn-cancel');
+            const btnConfirm = document.getElementById('alert-btn-confirm');
+
+            titleEl.textContent = title;
+            msgEl.textContent = msg;
+
+            iconContainer.className = "w-14 h-14 rounded-full bg-pink-500/10 text-synth-pink flex items-center justify-center text-2xl mx-auto mb-4 border border-synth-pink/20";
+            icon.className = "fa-solid fa-circle-question";
+
+            btnCancel.classList.remove('hidden');
+            btnConfirm.textContent = "Lanjut";
+            btnConfirm.className = "flex-1 bg-gradient-to-r from-synth-pink to-synth-violet hover:from-pink-500 hover:to-violet-500 text-white py-2.5 px-4 rounded-xl shadow-neon-pink transition font-semibold text-sm";
+
+            btnCancel.onclick = () => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                callback(false);
+            };
+
+            btnConfirm.onclick = () => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                callback(true);
+            };
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // Modal Difficulty
+        function openDifficultyModal() {
+            playSound('click');
+            const modal = document.getElementById('modal-difficulty');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('translate-y-4');
+        }
+
+        function closeDifficultyModal() {
+            playSound('click');
+            const modal = document.getElementById('modal-difficulty');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.add('translate-y-4');
+        }
+
+        function selectDifficulty(diff) {
+            activeDifficulty = diff;
+            closeDifficultyModal();
+            initNewGame(diff);
+        }
+
+        // Modal Stats
+        function openStatsModal() {
+            playSound('click');
+            showStats();
+            const modal = document.getElementById('modal-stats');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('translate-y-4');
+        }
+
+        function closeStatsModal() {
+            playSound('click');
+            const modal = document.getElementById('modal-stats');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.add('translate-y-4');
+        }
+
+
+        // Initializes a totally fresh Sudoku Game
+        function initNewGame(difficulty) {
+            document.getElementById('display-difficulty').textContent = difficulty;
+            
+            // Reset stats & timers
+            generateSudoku(difficulty);
+            resetTimer();
+            startTimer();
+
+            // Store total plays
+            const played = parseInt(localStorage.getItem('sudoku_played') || '0');
+            localStorage.setItem('sudoku_played', played + 1);
+        }
+
+        // Re-renders the 9x9 HTML Grid in real-time
+        function renderBoardGrid() {
+            const gridContainer = document.getElementById('sudoku-grid');
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < 81; i++) {
+                const cellVal = gridCurrent[i];
+                const initialVal = gridInitial[i];
+                
+                const cellDiv = document.createElement('div');
+                cellDiv.className = "sudoku-cell relative flex items-center justify-center font-semibold text-lg cursor-pointer bg-synth-card select-none border-violet-950/20";
+                
+                // Set special thick borders to outline 3x3 smaller quadrants
+                const row = Math.floor(i / 9);
+                const col = i % 9;
+                
+                let borderClasses = "border";
+                if (col % 3 === 2 && col !== 8) borderClasses += " border-r-2 border-r-violet-600/60";
+                if (row % 3 === 2 && row !== 8) borderClasses += " border-b-2 border-b-violet-600/60";
+                cellDiv.className += " " + borderClasses;
+
+                cellDiv.dataset.index = i;
+                cellDiv.onclick = () => selectCell(i);
+
+                if (initialVal !== 0) {
+                    // Initial clues can't be edited
+                    cellDiv.textContent = initialVal;
+                    cellDiv.className += " text-slate-400 font-bold bg-slate-900/40";
+                } else if (cellVal !== 0) {
+                    // Modified edits by player
+                    cellDiv.textContent = cellVal;
+                    // Check if player cell values are correct
+                    if (cellVal === gridSolution[i]) {
+                        cellDiv.className += " text-synth-cyan font-bold";
+                    } else {
+                        cellDiv.className += " text-synth-pink bg-red-500/5 font-extrabold shadow-inner";
+                    }
+                } else {
+                    // Render Notes/Pencils in empty space
+                    const notesContainer = document.createElement('div');
+                    notesContainer.className = "absolute inset-0 grid grid-cols-3 grid-rows-3 p-1 pointer-events-none text-[8px] leading-none text-slate-500";
+                    for (let n = 1; n <= 9; n++) {
+                        const noteDiv = document.createElement('div');
+                        noteDiv.className = "flex items-center justify-center font-bold";
+                        noteDiv.textContent = cellNotes[i][n] ? n : "";
+                        notesContainer.appendChild(noteDiv);
+                    }
+                    cellDiv.appendChild(notesContainer);
+                }
+
+                gridContainer.appendChild(cellDiv);
+            }
+            highlightActiveCells();
+        }
+
+        // Visually Highlights selected & corresponding boxes
+        function highlightActiveCells() {
+            const cells = document.querySelectorAll('.sudoku-cell');
+            cells.forEach(c => {
+                c.classList.remove('bg-violet-500/10', 'bg-violet-500/30', 'ring-2', 'ring-synth-cyan', 'shadow-neon-cyan', 'z-10');
+            });
+
+            if (selectedCellIndex === -1) return;
+
+            const targetRow = Math.floor(selectedCellIndex / 9);
+            const targetCol = selectedCellIndex % 9;
+            const targetVal = gridCurrent[selectedCellIndex];
+
+            cells.forEach((cell, index) => {
+                const r = Math.floor(index / 9);
+                const c = index % 9;
+                const v = gridCurrent[index];
+
+                if (index === selectedCellIndex) {
+                    // Active Selected Cell
+                    cell.classList.add('bg-violet-500/30', 'ring-2', 'ring-synth-cyan', 'shadow-neon-cyan', 'z-10');
+                } else if (r === targetRow || c === targetCol || (Math.floor(r/3) === Math.floor(targetRow/3) && Math.floor(c/3) === Math.floor(targetCol/3))) {
+                    // Siblings in row, column or box
+                    cell.classList.add('bg-violet-500/10');
+                } else if (targetVal !== 0 && v === targetVal) {
+                    // Highlights identical numbers on board
+                    cell.classList.add('bg-pink-500/10');
+                }
+            });
+        }
+
+        // Activates specific grid coordinate cell on touch
+        function selectCell(index) {
+            if (isGamePaused) return;
+            playSound('click');
+            selectedCellIndex = index;
+            highlightActiveCells();
+        }
+
+        // Inputs number from user keypad/physical keyboard
+        function inputNumber(num) {
+            if (isGamePaused || selectedCellIndex === -1) return;
+
+            // Cannot modify initial given coordinates
+            if (gridInitial[selectedCellIndex] !== 0) return;
+
+            // Save state to undo history before modification
+            saveHistory();
+
+            if (isPencilMode) {
+                // Modify Notes Pencil Array
+                cellNotes[selectedCellIndex][num] = !cellNotes[selectedCellIndex][num];
+                gridCurrent[selectedCellIndex] = 0; // Clear actual value if note inputted
+                playSound('click');
+            } else {
+                // Clear any leftover notes
+                cellNotes[selectedCellIndex] = Array(10).fill(false);
+                
+                const prevValue = gridCurrent[selectedCellIndex];
+                gridCurrent[selectedCellIndex] = num;
+
+                if (num === gridSolution[selectedCellIndex]) {
+                    playSound('success');
+                    // Check if Game Completed
+                    checkWinState();
+                } else {
+                    playSound('error');
+                    mistakesCount++;
+                    updateDashboardDisplay();
+                    
+                    if (mistakesCount >= maxMistakes) {
+                        endGame(false);
+                    }
+                }
+            }
+            renderBoardGrid();
+        }
+
+        // Erases current values from target slot
+        function eraseCell() {
+            if (isGamePaused || selectedCellIndex === -1) return;
+            if (gridInitial[selectedCellIndex] !== 0) return;
+
+            saveHistory();
+            playSound('click');
+            gridCurrent[selectedCellIndex] = 0;
+            cellNotes[selectedCellIndex] = Array(10).fill(false);
+            renderBoardGrid();
+        }
+
+        // Toggles Pencil Mode Status
+        function togglePencilMode() {
+            playSound('click');
+            isPencilMode = !isPencilMode;
+            const badge = document.getElementById('pencil-badge');
+            const btn = document.getElementById('btn-pencil');
+
+            if (isPencilMode) {
+                badge.textContent = "ON";
+                badge.className = "absolute top-1.5 right-1.5 text-[8px] bg-synth-pink text-white px-1.5 py-0.5 rounded-full font-bold shadow-neon-pink";
+                btn.classList.add('border-synth-pink');
+            } else {
+                badge.textContent = "OFF";
+                badge.className = "absolute top-1.5 right-1.5 text-[8px] bg-slate-700 text-white px-1.5 py-0.5 rounded-full font-bold";
+                btn.classList.remove('border-synth-pink');
+            }
+        }
+
+        // Fills target coordinate cell with accurate value hint
+        function getHint() {
+            if (isGamePaused || selectedCellIndex === -1) {
+                showCustomAlert("Pilih Sel", "Silakan klik atau ketuk salah satu sel kosong di papan terlebih dahulu.", "info");
+                return;
+            }
+            if (gridInitial[selectedCellIndex] !== 0) return;
+            if (gridCurrent[selectedCellIndex] === gridSolution[selectedCellIndex]) return;
+
+            if (remainingHints <= 0) {
+                showCustomAlert("Hint Habis", "Anda telah menghabiskan seluruh kuota petunjuk bantuan pada sesi ini.", "error");
+                return;
+            }
+
+            saveHistory();
+            playSound('success');
+            remainingHints--;
+            
+            const trueVal = gridSolution[selectedCellIndex];
+            gridCurrent[selectedCellIndex] = trueVal;
+            cellNotes[selectedCellIndex] = Array(10).fill(false);
+            
+            updateDashboardDisplay();
+            renderBoardGrid();
+            
+            checkWinState();
+        }
+
+        // Undo operations
+        function undoMove() {
+            if (isGamePaused || historyStack.length === 0) return;
+            playSound('click');
+            const previousState = historyStack.pop();
+            gridCurrent = [...previousState.grid];
+            cellNotes = previousState.notes.map(arr => [...arr]);
+            renderBoardGrid();
+        }
+
+        // Saves state history for Undo operations
+        function saveHistory() {
+            historyStack.push({
+                grid: [...gridCurrent],
+                notes: cellNotes.map(arr => [...arr])
+            });
+            if (historyStack.length > 30) historyStack.shift(); // Limit stack size to 30
+        }
+
+        // Physical Keyboard Event Bindings
+        document.addEventListener('keydown', (e) => {
+            if (!userLoggedIn || isGamePaused) return;
+            if (selectedCellIndex === -1) return;
+
+            // Check if key is a digit from 1-9
+            if (e.key >= '1' && e.key <= '9') {
+                inputNumber(parseInt(e.key));
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                eraseCell();
+            } else if (e.key === 'n' || e.key === 'N') {
+                togglePencilMode();
+            }
+        });
+
+        // Updates Mistakes, Hints, Header Displays
+        function updateDashboardDisplay() {
+            document.getElementById('mistakes-counter').textContent = `${mistakesCount} / ${maxMistakes}`;
+            document.getElementById('hints-counter').textContent = `${remainingHints} / 3`;
+        }
+
+        // Verifies if the board matches the generated solution
+        function checkWinState() {
+            const won = gridCurrent.every((val, index) => val === gridSolution[index]);
+            if (won) {
+                endGame(true);
+            }
+        }
+
+        // Finishes game and computes score records
+        async function endGame(victory) {
+            clearInterval(timerInterval);
+            isGamePaused = true;
+
+            if (victory) {
+                playSound('victory');
+                startConfettiEffect();
+                
+                // Store win data
+                const won = parseInt(localStorage.getItem('sudoku_won') || '0');
+                localStorage.setItem('sudoku_won', won + 1);
+
+                // Save Personal Best Time
+                const bestKey = `sudoku_best_${activeDifficulty}`;
+                const prevBest = localStorage.getItem(bestKey);
+                let recordMsg = "";
+                
+                if (!prevBest || timerSeconds < parseInt(prevBest)) {
+                    localStorage.setItem(bestKey, timerSeconds);
+                    recordMsg = `\n\n🎉 REKOR BARU! Anda menyelesaikan level ini dalam ${formatTime(timerSeconds)}!`;
+                }
+
+                await showCustomAlert(
+                    "Misi Sukses!", 
+                    `Selamat, Agen ${activePlayer}! Anda berhasil menaklukkan Sudoku Level [${activeDifficulty.toUpperCase()}] dengan catatan waktu ${formatTime(timerSeconds)}!${recordMsg}`, 
+                    "success"
+                );
+            } else {
+                playSound('error');
+                await showCustomAlert(
+                    "Sistem Crash!", 
+                    `Maaf, Anda telah melakukan ${maxMistakes} kali kesalahan berturut-turut. Latihan otak terhenti! Coba lagi!`, 
+                    "error"
+                );
+                initNewGame(activeDifficulty);
+            }
+        }
+
+        // -------------------------
+        // TIMER LOGIC
+        // -------------------------
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isGamePaused) {
+                    timerSeconds++;
+                    document.getElementById('display-timer').textContent = formatTime(timerSeconds);
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerSeconds = 0;
+            isGamePaused = false;
+            document.getElementById('display-timer').textContent = "00:00";
+        }
+
+        function togglePauseGame() {
+            playSound('click');
+            isGamePaused = !isGamePaused;
+            const overlay = document.getElementById('pause-overlay');
+            const icon = document.getElementById('pause-icon');
+
+            if (isGamePaused) {
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                icon.className = "fa-solid fa-play";
+            } else {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                icon.className = "fa-solid fa-pause";
+            }
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // -------------------------
+        // LOCAL STORAGE STATS RETRIEVAL
+        // -------------------------
+        function showStats() {
+            document.getElementById('stat-total-played').textContent = localStorage.getItem('sudoku_played') || '0';
+            document.getElementById('stat-total-won').textContent = localStorage.getItem('sudoku_won') || '0';
+
+            const easy = localStorage.getItem('sudoku_best_easy');
+            const medium = localStorage.getItem('sudoku_best_medium');
+            const hard = localStorage.getItem('sudoku_best_hard');
+            const expert = localStorage.getItem('sudoku_best_expert');
+            const master = localStorage.getItem('sudoku_best_master');
+            const extreme = localStorage.getItem('sudoku_best_extreme');
+
+            document.getElementById('stat-best-easy').textContent = easy ? formatTime(parseInt(easy)) : '--:--';
+            document.getElementById('stat-best-medium').textContent = medium ? formatTime(parseInt(medium)) : '--:--';
+            document.getElementById('stat-best-hard').textContent = hard ? formatTime(parseInt(hard)) : '--:--';
+            document.getElementById('stat-best-expert').textContent = expert ? formatTime(parseInt(expert)) : '--:--';
+            document.getElementById('stat-best-master').textContent = master ? formatTime(parseInt(master)) : '--:--';
+            document.getElementById('stat-best-extreme').textContent = extreme ? formatTime(parseInt(extreme)) : '--:--';
+        }
+
+        function resetStatsData() {
+            showCustomConfirm(
+                "Hapus Statistik?", 
+                "Apakah Anda yakin ingin menghapus semua rekor waktu dan riwayat bermain Anda? Tindakan ini tidak dapat dibatalkan.",
+                async (confirmed) => {
+                    if (confirmed) {
+                        playSound('error');
+                        localStorage.setItem('sudoku_played', '0');
+                        localStorage.setItem('sudoku_won', '0');
+                        localStorage.removeItem('sudoku_best_easy');
+                        localStorage.removeItem('sudoku_best_medium');
+                        localStorage.removeItem('sudoku_best_hard');
+                        localStorage.removeItem('sudoku_best_expert');
+                        localStorage.removeItem('sudoku_best_master');
+                        localStorage.removeItem('sudoku_best_extreme');
+                        showStats();
+                        showCustomAlert("Selesai", "Seluruh data rekor waktu Anda telah berhasil dihapus.", "success");
+                    }
+                }
+            );
+        }
+
+
+        // -------------------------
+        // CANVAS CONFETTI CELEBRATION
+        // -------------------------
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confettiActive = false;
+        let confettiArray = [];
+
+        function resizeConfettiCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfettiCanvas);
+        resizeConfettiCanvas();
+
+        class ConfettiParticle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height - 20;
+                this.size = Math.random() * 8 + 6;
+                this.color = ['#ff007f', '#7928ca', '#00f0ff', '#ffee00', '#10b981'][Math.floor(Math.random() * 5)];
+                this.speedY = Math.random() * 4 + 4;
+                this.speedX = Math.random() * 2 - 1;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 4 - 2;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function startConfettiEffect() {
+            confettiActive = true;
+            confettiArray = Array.from({length: 120}, () => new ConfettiParticle());
+            animateConfetti();
+            setTimeout(() => {
+                confettiActive = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }, 7000);
+        }
+
+        function animateConfetti() {
+            if (!confettiActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confettiArray.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateConfetti);
+        }
+
+        // Check if user already logged in during active session
+        window.onload = function() {
+            const hasLoggedIn = localStorage.getItem('sudoku_logged_in');
+            const savedName = localStorage.getItem('sudoku_player_name');
+            
+            if (hasLoggedIn === 'true' && savedName) {
+                // Instantly log them in but keep name cached
+                document.getElementById('player-name').value = savedName;
+            }
+        }
+    </script>
+</body>
+</html>
